@@ -455,12 +455,12 @@ uint8_t frsky_check_transceiver(void) {
     cc2500_strobe(RFST_SIDLE);
 
     // check version:
-    debug("frsky: cc2500 partnum 0x");
     partnum = cc2500_get_register_burst(PARTNUM);
+    version = cc2500_get_register_burst(VERSION);
+    debug("frsky: cc2500 partnum 0x");
     debug_put_hex8(partnum);
 
     debug(" version 0x");
-    version = cc2500_get_register_burst(VERSION);
     debug_put_hex8(version);
     debug_put_newline();
 

@@ -182,15 +182,15 @@ void config_detect_hw_revision(void);
 #define CC2500_SPI_RX_DMA_CHANNEL   DMA_CHANNEL4
 
 // LABELED RF1
-#define CC2500_GDO1_PIN            GPIO8
-#define CC2500_GDO1_GPIO           GPIOE
+#define CC2500_GDO1_PIN            GPIO9
+#define CC2500_GDO1_GPIO           GPIOB
 
 // LABELED RX-W
-#define CC2500_LNA_GPIO     GPIOE
+#define CC2500_LNA_GPIO     GPIOB
 #define CC2500_LNA_PIN      GPIO7
 
 // LABELED TX_W
-#define CC2500_PA_GPIO     GPIOE
+#define CC2500_PA_GPIO     GPIOB
 #define CC2500_PA_PIN      GPIO6
 
 // LABELED GIO2

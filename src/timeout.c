@@ -34,7 +34,6 @@ static volatile __IO uint32_t timeout_100us_delay;
 void timeout_init(void) {
     debug("timeout: init\n"); debug_flush();
 
-#ifdef STM32F0
     // configure 0.1ms sys tick:
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
     systick_set_reload(rcc_ahb_frequency / 10000);
@@ -46,17 +45,19 @@ void timeout_init(void) {
 
     // set prio
     nvic_set_priority(NVIC_SYSTICK_IRQ, NVIC_PRIO_SYSTICK);
-#endif
+
     timeout_100us = 0;
     timeout2_100us = 0;
     timeout_100us_delay = 0;
 }
 
 void timeout_set_100us(__IO uint32_t hus) {
+    debug("timeout_set_100us\n"); debug_flush();
     timeout_100us = hus;
 }
 
 void timeout2_set_100us(__IO uint32_t hus) {
+    debug("timeout2_set_100us\n"); debug_flush();
     timeout2_100us = hus;
 }
 
@@ -69,6 +70,7 @@ uint8_t timeout2_timed_out(void) {
 }
 
 void timeout2_delay_100us(uint16_t us) {
+    debug("timeout2_delay_100us\n"); debug_flush();
     timeout2_set_100us(us);
     while (!timeout2_timed_out()) {}
 }
@@ -76,6 +78,7 @@ void timeout2_delay_100us(uint16_t us) {
 
 // seperate ms delay function
 void timeout_delay_ms(uint32_t timeout) {
+    debug("timeout_delay_ms\n"); debug_flush();
     timeout_100us_delay = 10*timeout;
 
     while (timeout_100us_delay > 0) {

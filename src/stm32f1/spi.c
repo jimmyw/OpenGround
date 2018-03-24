@@ -40,7 +40,7 @@ static void spi_init_rcc(void);
 
 
 void spi_init(void) {
-    //debug("spi: init\n"); debug_flush();
+    debug("spi: init\n"); debug_flush();
     spi_init_rcc();
     spi_init_gpio();
     spi_init_mode();
@@ -63,6 +63,7 @@ static void spi_init_rcc(void) {
 }
 
 static void spi_init_mode(void) {
+    debug("spi: init\n"); debug_flush();
     // SPI NVIC
     // nvic_set_priority(NVIC_SPI2_IRQ, 3);
     // nvic_enable_irq(NVIC_SPI2_IRQ);
@@ -81,7 +82,7 @@ static void spi_init_mode(void) {
                     SPI_CR1_BAUDRATE_FPCLK_DIV_8,
                     SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
                     SPI_CR1_CPHA_CLK_TRANSITION_1,
-                    /*SPI_CR1_CRCL_8BIT*/ SPI_CR1_DFF_8BIT,
+                    SPI_CR1_DFF_8BIT,
                     SPI_CR1_MSBFIRST);
 
     // set NSS to software
@@ -102,7 +103,7 @@ static void spi_init_mode(void) {
 
 
 static void spi_init_dma(void) {
-    //debug("spi: init dma\n"); debug_flush();
+    debug("spi: init dma\n"); debug_flush();
 
     // enable DMA1 Peripheral Clock
     rcc_periph_clock_enable(RCC_DMA1);
@@ -160,7 +161,7 @@ static void spi_init_dma(void) {
 // data in buffer will be sent and will be overwritten with
 // the data read back from the spi slave
 void spi_dma_xfer(uint8_t *buffer, uint8_t len) {
-    // debug("xfer "); debug_put_uint8(len); debug(")\n");
+    debug("spi_dma_xfer "); debug_put_uint8(len); debug(")\n");
 
     // TX: transfer buffer to slave
     dma_set_memory_address(DMA1, CC2500_SPI_TX_DMA_CHANNEL, (uint32_t)buffer);
@@ -190,30 +191,38 @@ void spi_dma_xfer(uint8_t *buffer, uint8_t len) {
 
 
 static void spi_init_gpio(void) {
+    debug("spi: init gpio\n"); debug_flush();
 
     // sck och mosi as outputs.
-	  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
+	  gpio_set_mode(CC2500_SPI_GPIO, GPIO_MODE_OUTPUT_50_MHZ,
             GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, CC2500_SPI_SCK_PIN | CC2500_SPI_MOSI_PIN);
 
     // miso as input
-	  gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT,
+	  gpio_set_mode(CC2500_SPI_GPIO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT,
 			CC2500_SPI_MISO_PIN);
 
     // configure csn
-	  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
+	  gpio_set_mode(CC2500_SPI_GPIO, GPIO_MODE_OUTPUT_50_MHZ,
             GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, CC2500_SPI_CSN_PIN);
-
-    // start deselected
+  
+    // start with csn high
+    delay_us(1);
     gpio_set(CC2500_SPI_GPIO, CC2500_SPI_CSN_PIN);
 }
 
 uint8_t spi_tx(uint8_t data) {
+    debug("spi_tx 0x"); debug_put_hex8(data); debug(" read: 0x");
     spi_send(CC2500_SPI, data);
-    return spi_read(CC2500_SPI);
+    uint8_t res = spi_read(CC2500_SPI);
+    debug_put_hex8(res); debug("\n"); debug_flush();
+    return res;
 }
 
 
 uint8_t spi_rx(void) {
+    debug("spi_rx res: 0x");
     spi_send(CC2500_SPI, 0xFF);
-    return spi_read(CC2500_SPI);
+    uint8_t res = spi_read(CC2500_SPI);
+    debug_put_hex8(res); debug("\n"); debug_flush();
+    return res;
 }
