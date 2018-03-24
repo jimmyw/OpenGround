@@ -1,3 +1,4 @@
+MAKEFLAGS += --no-builtin-rules
 ROOT         := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 SOURCE_DIR   = $(ROOT)/src
 INCLUDE_DIR  = $(SOURCE_DIR)
@@ -14,8 +15,9 @@ DFU_UTIL ?= dfu-util
   
 TARGET   ?= openground
 TARGET_SOURCE_DIR   = $(ROOT)/src/$(TARGET)
-TARGET_SOURCE_FILES_FOUND = $(wildcard $(TARGET_SOURCE_DIR)/*.c)
-SOURCE_FILES += $(TARGET_SOURCE_FILES_FOUND:./src/$(TARGET)/%=%)
+TARGET_SOURCE_FILES_FOUND += $(wildcard $(TARGET_SOURCE_DIR)/*.c)
+TARGET_SOURCE_FILES = $(TARGET_SOURCE_FILES_FOUND:./src/%=%)
+SOURCE_FILES += $(TARGET_SOURCE_FILES)
 include $(TARGET).mk
 
 CFLAGS += -I./src -I./src/$(TARGET)
@@ -177,6 +179,7 @@ bin_dir:
 obj_dir:
 	@mkdir -p ${OBJECT_DIR}
 	@mkdir -p ${OBJECT_DIR}/eeprom_emulation
+	@mkdir -p ${OBJECT_DIR}/$(TARGET)
 
 ifeq ($(STLINK_PORT),)
 ifeq ($(BMP_PORT),)
