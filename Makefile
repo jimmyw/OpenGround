@@ -13,10 +13,13 @@ ASFLAGS = -g
 DFU_UTIL ?= dfu-util
   
 TARGET   ?= openground
+TARGET_SOURCE_DIR   = $(ROOT)/src/$(TARGET)
+TARGET_SOURCE_FILES_FOUND = $(wildcard $(TARGET_SOURCE_DIR)/*.c)
+SOURCE_FILES += $(TARGET_SOURCE_FILES_FOUND:./src/$(TARGET)/%=%)
 include $(TARGET).mk
 
-CFLAGS += -I./src
-LDFLAGS += -L./src
+CFLAGS += -I./src -I./src/$(TARGET)
+LDFLAGS += -L./src -L./src/$(TARGET)
 
 # Be silent per default, but 'make V=1' will show all compiler calls.
 ifneq ($(V),1)
