@@ -237,6 +237,8 @@ libopencm3/lib/libopencm3_stm32f0.a:
 submodules:
 	@git submodule update --init -- libopencm3
 
+gdb-openocd: $(BIN_DIR)/$(TARGET).elf
+	$(GDB) $(BIN_DIR)/$(TARGET).elf -ex "target remote localhost:3333"
 
 .PHONY: images clean stylecheck styleclean elf bin hex srec list submodules bin_dir obj_dir stylecheck
 

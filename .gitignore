@@ -1,5 +1,7 @@
 *.bak
 *.swp
+tags
+
 # Object files
 *.o
 *.d

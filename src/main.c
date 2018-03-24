@@ -200,7 +200,7 @@ int main(void) {
     while (1) {
         // adc_test();
         // io_powerdown_test();
-        // debug("ABCDEFGHIJKLMN\ni   .   !\n"); debug_flush();
+        debug("ABCDEFGHIJKLMN\ni   .   !\n"); debug_flush();
         // while (1);
         //
     }

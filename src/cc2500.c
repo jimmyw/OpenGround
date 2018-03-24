@@ -39,6 +39,7 @@ void cc2500_init(void) {
     spi_init();
 }
 
+#ifdef STM32F0
 static void cc2500_init_gpio(void) {
     // set high:
     gpio_set(POWERDOWN_GPIO, POWERDOWN_PIN);
@@ -77,6 +78,10 @@ static void cc2500_init_gpio(void) {
     gpio_mode_setup(CC2500_GDO2_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, CC2500_GDO2_PIN);
     gpio_set_output_options(CC2500_GDO2_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, CC2500_GDO2_PIN);
 }
+#else
+static void cc2500_init_gpio(void) {
+}
+#endif
 
 inline void cc2500_enter_rxmode(void) {
     // LNA = 1, PA = 0

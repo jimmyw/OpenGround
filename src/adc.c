@@ -172,7 +172,17 @@ uint16_t adc_get_channel_packetdata(uint8_t idx) {
 
 static void adc_init_rcc(void) {
     debug("adc: init rcc\n"); debug_flush();
+#ifdef STM32F1
+    rcc_periph_clock_enable(RCC_ADC1);
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
 
+    adc_power_off(ADC1);
+
+
+    rcc_periph_clock_enable(RCC_DMA1);
+
+#else
     // enable adc clock
     rcc_periph_clock_enable(RCC_ADC);
 
@@ -192,11 +202,18 @@ static void adc_init_rcc(void) {
 
     // enable dma clock
     rcc_periph_clock_enable(RCC_DMA);
+#endif
 }
 
 static void adc_init_gpio(void) {
     debug("adc: init gpio\n"); debug_flush();
 
+#ifdef STM32F1
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, GPIO0);
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, GPIO1);
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, GPIO2);
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, GPIO6);
+#else
     // set up analog inputs ADC0...ADC7(PA0...PA7)
     gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, 0b11111111);
 
@@ -205,6 +222,7 @@ static void adc_init_gpio(void) {
 
     // battery voltage is on PC0(ADC10)
     gpio_mode_setup(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, 0b00000001);
+#endif
 }
 
 uint32_t adc_get_battery_voltage(void) {
@@ -232,18 +250,24 @@ static void adc_init_mode(void) {
     adc_disable_external_trigger_regular(ADC1);
     // right 12-bit data alignment in ADC reg
     adc_set_right_aligned(ADC1);
+#ifdef STM32F0
     adc_set_resolution(ADC1, ADC_RESOLUTION_12BIT);
 
     // adc_enable_temperature_sensor();
     adc_disable_analog_watchdog(ADC1);
 
-    // configure channels 0...10
-    uint8_t channels[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-
     // sample times for all channels
     adc_set_sample_time_on_all_channels(ADC1, ADC_SMPTIME_041DOT5);
+#endif
 
+#ifdef STM32F1
+    uint8_t channels[16] = { 0, 1, 2, 6};
+    adc_set_regular_sequence(ADC1, 4, channels);
+#else
+    // configure channels 0...10
+    uint8_t channels[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     adc_set_regular_sequence(ADC1, sizeof(channels), channels);
+#endif
 
     adc_power_on(ADC1);
 

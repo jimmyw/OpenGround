@@ -34,6 +34,7 @@ static volatile __IO uint32_t timeout_100us_delay;
 void timeout_init(void) {
     debug("timeout: init\n"); debug_flush();
 
+#ifdef STM32F0
     // configure 0.1ms sys tick:
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
     systick_set_reload(rcc_ahb_frequency / 10000);
@@ -45,7 +46,7 @@ void timeout_init(void) {
 
     // set prio
     nvic_set_priority(NVIC_SYSTICK_IRQ, NVIC_PRIO_SYSTICK);
-
+#endif
     timeout_100us = 0;
     timeout2_100us = 0;
     timeout_100us_delay = 0;

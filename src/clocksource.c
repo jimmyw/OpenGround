@@ -25,12 +25,14 @@
 
 uint32_t rcc_timer_frequency;
 
+#ifdef STM32F1
 void clocksource_init(void) {
-    // set clock source
-    clocksource_hse_in_8_out_48();
+    rcc_clock_setup_in_hse_12mhz_out_72mhz();
 }
+#endif
 
-void clocksource_hse_in_8_out_48(void) {
+#ifdef STM32F0
+void clocksource_init(void) { // hse_in_8_out_48
     // see
     // https://www.mikrocontroller.net/attachment/322047/Clock_Control.png
     // or RM00091 p. 98
@@ -81,4 +83,5 @@ void clocksource_hse_in_8_out_48(void) {
     // TIM input clock is apb clkspeed*2 (see RM00091 p98)
     rcc_timer_frequency = 2*rcc_apb1_frequency;
 }
+#endif
 

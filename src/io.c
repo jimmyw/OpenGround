@@ -35,6 +35,7 @@ void io_init(void) {
 }
 
 void io_init_gpio(void) {
+#ifdef STM32F0
     // enable clocks
     rcc_periph_clock_enable(GPIO_RCC(POWERDOWN_GPIO));
     rcc_periph_clock_enable(GPIO_RCC(BUTTON_POWER_BOTH_GPIO));
@@ -49,10 +50,12 @@ void io_init_gpio(void) {
     // set buttons as input:
     gpio_mode_setup(BUTTON_POWER_BOTH_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, BUTTON_POWER_BOTH_PIN);
     gpio_set_output_options(BUTTON_POWER_BOTH_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, BUTTON_POWER_BOTH_PIN);
+#endif
 }
 
 
 void io_test_prepare(void) {
+#ifdef STM32F0
     // set all ios to input
     gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFFFF);
     gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFFFF);
@@ -60,10 +63,15 @@ void io_test_prepare(void) {
     gpio_mode_setup(GPIOD, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFFFF);
     gpio_mode_setup(GPIOE, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFFFF);
     gpio_mode_setup(GPIOF, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFFFF);
+#endif
 }
 
 uint32_t io_powerbutton_pressed(void) {
+#ifdef STM32F0
     return(gpio_get(BUTTON_POWER_BOTH_GPIO, BUTTON_POWER_BOTH_PIN) == 0);
+#else
+    return 0;
+#endif
 }
 
 // show status of all gpios on screen

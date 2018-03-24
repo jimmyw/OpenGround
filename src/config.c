@@ -29,6 +29,13 @@ void config_init(void) {
 
 // autodetect hw revision works as follows:
 // tgy evolution has a pulldown on RF0 (=PE.10)
+#ifdef STM32F1
+void config_detect_hw_revision(void) {
+    config_hw_revision = CONFIG_HW_REVISION_HOMEBREW;
+}
+#endif
+
+#ifdef STM32F0
 void config_detect_hw_revision(void) {
     // enable peripheral clock
     rcc_periph_clock_enable(GPIO_RCC(HW_REVISION_GPIO));
@@ -46,5 +53,6 @@ void config_detect_hw_revision(void) {
         config_hw_revision = CONFIG_HW_REVISION_I6S;
     }
 }
+#endif
 
 

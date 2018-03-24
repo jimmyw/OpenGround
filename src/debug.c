@@ -20,7 +20,10 @@
 #include "debug.h"
 #include "delay.h"
 #include "main.h"
+#include "config.h"
+#include "adc.h"
 #include "gui.h"
+#include "lcd.h"
 #include "console.h"
 #include "screen.h"
 #include <stdint.h>
