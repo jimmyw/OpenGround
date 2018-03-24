@@ -85,6 +85,18 @@ uint16_t adc_get_channel(uint32_t id) {
             case (CHANNEL_ID_CH2)      : return adc_data[6];
             case (CHANNEL_ID_CH3)      : return adc_data[4];
         }
+    } else if (config_hw_revision == CONFIG_HW_REVISION_HOMEBREW) {
+        switch (id) {
+            default : return adc_data[id];
+            case (CHANNEL_ID_AILERON)  : return 4095 - adc_data[3];
+            case (CHANNEL_ID_ELEVATION): return 4095 - adc_data[2];
+            case (CHANNEL_ID_THROTTLE) : return 4095 - adc_data[1];
+            case (CHANNEL_ID_RUDDER)   : return 4095 - adc_data[0];
+            case (CHANNEL_ID_CH0)      : return 0;
+            case (CHANNEL_ID_CH1)      : return 0;
+            case (CHANNEL_ID_CH2)      : return 0;
+            case (CHANNEL_ID_CH3)      : return 0;
+        }
     }
 
     // else: undefined!

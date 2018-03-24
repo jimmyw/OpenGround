@@ -147,6 +147,11 @@ int main(void) {
     // init crystal osc & set clock options
     clocksource_init();
 
+#ifdef STM32F1
+    // Serial console can be set up early
+    console_init();
+    debug_init();
+#endif
 
     config_init();
 
@@ -169,10 +174,12 @@ int main(void) {
     screen_init();
 
 
+#ifdef STM32F0
     console_init();
 
 
     debug_init();
+#endif
 
 
     adc_init();
@@ -200,7 +207,7 @@ int main(void) {
     while (1) {
         // adc_test();
         // io_powerdown_test();
-        debug("ABCDEFGHIJKLMN\ni   .   !\n"); debug_flush();
+        // debug("ABCDEFGHIJKLMN\ni   .   !\n"); debug_flush();
         // while (1);
         //
     }
