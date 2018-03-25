@@ -57,6 +57,7 @@ void spi_init(void) {
 }
 
 static void spi_init_rcc(void) {
+    debug("spi rcc: init\n"); debug_flush();
     // enable clocks
     rcc_periph_clock_enable(CC2500_SPI_GPIO_RCC);
     rcc_periph_clock_enable(CC2500_SPI_CLK);
@@ -195,7 +196,7 @@ static void spi_init_gpio(void) {
 
     // sck och mosi as outputs.
 	  gpio_set_mode(CC2500_SPI_GPIO, GPIO_MODE_OUTPUT_50_MHZ,
-            GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, CC2500_SPI_SCK_PIN | CC2500_SPI_MOSI_PIN);
+            GPIO_CNF_OUTPUT_PUSHPULL, CC2500_SPI_SCK_PIN | CC2500_SPI_MOSI_PIN);
 
     // miso as input
 	  gpio_set_mode(CC2500_SPI_GPIO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT,
@@ -203,7 +204,7 @@ static void spi_init_gpio(void) {
 
     // configure csn
 	  gpio_set_mode(CC2500_SPI_GPIO, GPIO_MODE_OUTPUT_50_MHZ,
-            GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, CC2500_SPI_CSN_PIN);
+            GPIO_CNF_OUTPUT_PUSHPULL, CC2500_SPI_CSN_PIN);
   
     // start with csn high
     delay_us(1);
