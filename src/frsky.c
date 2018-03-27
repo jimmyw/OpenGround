@@ -98,11 +98,10 @@ void frsky_init(void) {
     frsky_rssi = 100;
 
     // check if spi is working properly
-    if (!frsky_check_transceiver()) {
+    while (!frsky_check_transceiver()) {
         // no cc2500 detected - abort
         debug("frsky: no cc2500 detected. abort\n");
         debug_flush();
-        return;
     }
 
     // init frsky registersttings for cc2500
@@ -979,10 +978,10 @@ void frsky_calib_pll(void) {
         ch = storage.frsky_hop_table[i];
 
         // debug info
-        if (i < 9) {
+        //if (i < 9) {
             debug_put_hex8(ch);
             debug_putc(' ');
-        }
+        //}
 
         // set channel number
         frsky_tune_channel(ch);

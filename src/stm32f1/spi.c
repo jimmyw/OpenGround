@@ -54,6 +54,16 @@ void spi_init(void) {
         cc2500_csn_hi();
 
     }*/
+    /* DMA test
+    while(1) {
+        delay_ms(100);
+        uint8_t buf[254];
+        for(int i = 0; i < 245; i++)
+            buf[i] = i;
+        cc2500_csn_lo();
+        spi_dma_xfer(buf, sizeof(buf));
+        cc2500_csn_hi();
+    };*/
 }
 
 static void spi_init_rcc(void) {
@@ -68,6 +78,10 @@ static void spi_init_mode(void) {
     // SPI NVIC
     // nvic_set_priority(NVIC_SPI2_IRQ, 3);
     // nvic_enable_irq(NVIC_SPI2_IRQ);
+    //nvic_set_priority(NVIC_DMA1_CHANNEL4_IRQ, 0);
+    //nvic_enable_irq(NVIC_DMA1_CHANNEL4_IRQ);
+    //nvic_set_priority(NVIC_DMA1_CHANNEL5_IRQ, 0);
+    //nvic_enable_irq(NVIC_DMA1_CHANNEL5_IRQ);
 
     // clean start
     spi_reset(CC2500_SPI);
@@ -85,6 +99,7 @@ static void spi_init_mode(void) {
                     SPI_CR1_CPHA_CLK_TRANSITION_1,
                     SPI_CR1_DFF_8BIT,
                     SPI_CR1_MSBFIRST);
+    SPI2_I2SCFGR = 0;
 
     // set NSS to software
     // NOTE: setting NSS high is important! even when controling it on our
@@ -110,8 +125,8 @@ static void spi_init_dma(void) {
     rcc_periph_clock_enable(RCC_DMA1);
 
     // DMA NVIC
-    nvic_set_priority(NVIC_DMA1_CHANNEL4_IRQ, NVIC_PRIO_FRSKY);
-    nvic_set_priority(NVIC_DMA1_CHANNEL5_IRQ, NVIC_PRIO_FRSKY);
+    //nvic_set_priority(NVIC_DMA1_CHANNEL4_IRQ, NVIC_PRIO_FRSKY);
+    //nvic_set_priority(NVIC_DMA1_CHANNEL5_IRQ, NVIC_PRIO_FRSKY);
     // nvic_enable_irq(NVIC_DMA1_CHANNEL2_3_IRQ); // NO IRQ beeing used here
 
     // start with clean init for RX channel
@@ -162,8 +177,14 @@ static void spi_init_dma(void) {
 // data in buffer will be sent and will be overwritten with
 // the data read back from the spi slave
 void spi_dma_xfer(uint8_t *buffer, uint8_t len) {
-    debug("spi_dma_xfer "); debug_put_uint8(len); debug(")\n");
-
+#ifdef SPI_DEBUG
+    debug("spi_dma_xfer len:"); debug_put_uint8(len);
+    for (int i = 0; i < len; i++) {
+        debug(" 0x");
+        debug_put_hex8(buffer[i]);
+    }
+    debug(" begin\n");
+#endif
     // TX: transfer buffer to slave
     dma_set_memory_address(DMA1, CC2500_SPI_TX_DMA_CHANNEL, (uint32_t)buffer);
     dma_set_number_of_data(DMA1, CC2500_SPI_TX_DMA_CHANNEL, len);
@@ -188,6 +209,16 @@ void spi_dma_xfer(uint8_t *buffer, uint8_t len) {
     // disable DMA
     dma_disable_channel(DMA1, CC2500_SPI_RX_DMA_CHANNEL);
     dma_disable_channel(DMA1, CC2500_SPI_TX_DMA_CHANNEL);
+	spi_disable_rx_dma(SPI2);
+	spi_disable_tx_dma(SPI2);
+#ifdef SPI_DEBUG
+    debug("spi_dma_xfer len:"); debug_put_uint8(len);
+    for (int i = 0; i < len; i++) {
+        debug(" 0x");
+        debug_put_hex8(buffer[i]);
+    };
+    debug(" complete\n");
+#endif
 }
 
 
@@ -196,7 +227,7 @@ static void spi_init_gpio(void) {
 
     // sck och mosi as outputs.
 	  gpio_set_mode(CC2500_SPI_GPIO, GPIO_MODE_OUTPUT_50_MHZ,
-            GPIO_CNF_OUTPUT_PUSHPULL, CC2500_SPI_SCK_PIN | CC2500_SPI_MOSI_PIN);
+            GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, CC2500_SPI_SCK_PIN | CC2500_SPI_MOSI_PIN);
 
     // miso as input
 	  gpio_set_mode(CC2500_SPI_GPIO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT,
@@ -212,18 +243,26 @@ static void spi_init_gpio(void) {
 }
 
 uint8_t spi_tx(uint8_t data) {
+#ifdef SPI_DEBUG
     debug("spi_tx 0x"); debug_put_hex8(data); debug(" read: 0x");
+#endif
     spi_send(CC2500_SPI, data);
     uint8_t res = spi_read(CC2500_SPI);
+#ifdef SPI_DEBUG
     debug_put_hex8(res); debug("\n"); debug_flush();
+#endif
     return res;
 }
 
 
 uint8_t spi_rx(void) {
+#ifdef SPI_DEBUG
     debug("spi_rx res: 0x");
+#endif
     spi_send(CC2500_SPI, 0xFF);
     uint8_t res = spi_read(CC2500_SPI);
+#ifdef SPI_DEBUG
     debug_put_hex8(res); debug("\n"); debug_flush();
+#endif
     return res;
 }

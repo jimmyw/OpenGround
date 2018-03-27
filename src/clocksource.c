@@ -28,6 +28,7 @@ uint32_t rcc_timer_frequency;
 #ifdef STM32F1
 void clocksource_init(void) {
     rcc_clock_setup_in_hse_12mhz_out_72mhz();
+    rcc_timer_frequency = 2*rcc_apb1_frequency;
 }
 #endif
 
