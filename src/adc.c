@@ -255,6 +255,7 @@ uint32_t adc_get_battery_voltage(void) {
 static void adc_init_mode(void) {
     debug("adc: init mode\n"); debug_flush();
 
+#ifdef STM32F0
     // set mode to continous
     adc_set_continuous_conversion_mode(ADC1);
 
@@ -262,7 +263,6 @@ static void adc_init_mode(void) {
     adc_disable_external_trigger_regular(ADC1);
     // right 12-bit data alignment in ADC reg
     adc_set_right_aligned(ADC1);
-#ifdef STM32F0
     adc_set_resolution(ADC1, ADC_RESOLUTION_12BIT);
 
     // adc_enable_temperature_sensor();
@@ -273,6 +273,11 @@ static void adc_init_mode(void) {
 #endif
 
 #ifdef STM32F1
+    adc_enable_scan_mode(ADC1); /*scan mode means we scan all channels of the group to the end */
+    adc_enable_external_trigger_regular(ADC1, ADC_CR2_EXTSEL_SWSTART);
+    adc_set_right_aligned(ADC1);
+    adc_set_single_conversion_mode(ADC1);
+
     uint8_t channels[16] = { 0, 1, 2, 6};
     adc_set_regular_sequence(ADC1, 4, channels);
 #else
@@ -344,15 +349,19 @@ void adc_process(void) {
     // adc dma finished?
     if (dma_get_interrupt_flag(DMA1, ADC_DMA_CHANNEL, ADC_DMA_TC_FLAG)) {
         dma_clear_interrupt_flags(DMA1, ADC_DMA_CHANNEL, ADC_DMA_TC_FLAG);
+        debug_putc('A');
+#ifdef BATTERY_ADC_INDEX
         if (adc_battery_voltage_raw_filtered == 0) {
             // initialise with current value
-            adc_battery_voltage_raw_filtered = adc_data[10];
+            adc_battery_voltage_raw_filtered = adc_data[BATTERY_ADC_INDEX];
         } else {
             // low pass filter battery voltage
             adc_battery_voltage_raw_filtered = adc_battery_voltage_raw_filtered +
-                                     (4 * (adc_data[10] - adc_battery_voltage_raw_filtered)) / 128;
+                                     (4 * (adc_data[BATTERY_ADC_INDEX] - adc_battery_voltage_raw_filtered)) / 128;
         }
-
+#else
+    adc_battery_voltage_raw_filtered = 0;
+#endif
         // fine, arm DMA again:
         adc_dma_arm();
     } else {
