@@ -107,9 +107,9 @@ void config_detect_hw_revision(void);
 
 #define ADC_DMA_CHANNEL           DMA_CHANNEL1
 #define ADC_DMA_TC_FLAG           DMA_ISR_TCIF1
-#define ADC_CHANNEL_COUNT 11
 
 #ifdef STM32F0
+#define ADC_CHANNEL_COUNT 11
 // cc2500 module connection
 // SI = SDIO
 // SCK = SCK
@@ -154,6 +154,7 @@ void config_detect_hw_revision(void);
 #endif
 
 #ifdef STM32F1
+#define ADC_CHANNEL_COUNT 4
 // cc2500 module connection
 // SI = SDIO
 // SCK = SCK
