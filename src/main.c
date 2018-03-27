@@ -205,7 +205,7 @@ int main(void) {
     gui_loop();
 
     while (1) {
-        adc_test();
+        //adc_test();
         // io_powerdown_test();
         // debug("ABCDEFGHIJKLMN\ni   .   !\n"); debug_flush();
         // while (1);
