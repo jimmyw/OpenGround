@@ -349,7 +349,7 @@ void adc_process(void) {
     // adc dma finished?
     if (dma_get_interrupt_flag(DMA1, ADC_DMA_CHANNEL, ADC_DMA_TC_FLAG)) {
         dma_clear_interrupt_flags(DMA1, ADC_DMA_CHANNEL, ADC_DMA_TC_FLAG);
-        debug_putc('A');
+        //debug_putc('A');
 #ifdef BATTERY_ADC_INDEX
         if (adc_battery_voltage_raw_filtered == 0) {
             // initialise with current value

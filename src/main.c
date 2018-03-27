@@ -204,7 +204,12 @@ int main(void) {
 
     gui_loop();
 
+    static int once= 0;
     while (1) {
+        if (!once) {
+            //frsky_enter_bindmode();
+         }
+         once = 1;
         //adc_test();
         // io_powerdown_test();
         // debug("ABCDEFGHIJKLMN\ni   .   !\n"); debug_flush();

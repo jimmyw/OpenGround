@@ -36,7 +36,7 @@
 #include <libopencm3/stm32/timer.h>
 
 // this will make binding not very reliable, use for debugging only!
-#define FRSKY_DEBUG_BIND_DATA 0
+#define FRSKY_DEBUG_BIND_DATA 1
 #define FRSKY_DEBUG_HOPTABLE 1
 
 // DONE when n times a one:
@@ -527,7 +527,7 @@ void frsky_configure(void) {
 
 uint8_t frsky_bind_jumper_set(void) {
     debug("frsky: BIND jumper set = "); debug_flush();
-    if (0) {  // io_bind_request()) {
+    if (1) {  // io_bind_request()) {
         debug("YES -> binding\n");
         return 1;
     } else {
@@ -698,14 +698,14 @@ uint32_t frsky_autotune_do(void) {
                 frsky_packet_buffer[0] = 0x00;
             }
 
-            /*debug("[");debug_flush();
+            debug("[");debug_flush();
     uint8_t cnt;
             for (cnt = 0; cnt < FRSKY_PACKET_BUFFER_SIZE; cnt++) {
                 debug_put_hex8(frsky_packet_buffer[cnt]);
                 debug_putc(' ');
                 debug_flush();
             }
-            debug("]\n"); debug_flush();*/
+            debug("]\n"); debug_flush();
         }
     }
     if (!done) {
@@ -945,7 +945,7 @@ uint32_t frsky_fetch_txid_and_hoptable_do(void) {
 void frsky_fetch_txid_and_hoptable_finish(void) {
 #if FRSKY_DEBUG_BIND_DATA
     debug("frsky: hop[] = ");
-    for (i = 0; i < FRSKY_HOPTABLE_SIZE; i++) {
+    for (int i = 0; i < FRSKY_HOPTABLE_SIZE; i++) {
         debug_put_hex8(storage.frsky_hop_table[i]);
         debug_putc(' ');
         debug_flush();

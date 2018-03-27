@@ -80,6 +80,14 @@ static void cc2500_init_gpio(void) {
 }
 #else
 static void cc2500_init_gpio(void) {
+	  gpio_set_mode(CC2500_PA_GPIO, GPIO_MODE_OUTPUT_50_MHZ,
+            GPIO_CNF_OUTPUT_PUSHPULL, CC2500_PA_PIN);
+	  gpio_set_mode(CC2500_LNA_GPIO, GPIO_MODE_OUTPUT_50_MHZ,
+            GPIO_CNF_OUTPUT_PUSHPULL, CC2500_LNA_PIN);
+	  gpio_set_mode(CC2500_GDO1_GPIO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT,
+			CC2500_GDO1_PIN);
+	  gpio_set_mode(CC2500_GDO2_GPIO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT,
+			CC2500_GDO2_PIN);
 }
 #endif
 
