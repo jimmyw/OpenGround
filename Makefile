@@ -12,7 +12,7 @@ ASFLAGS = -g
 
 # dfu util path
 DFU_UTIL ?= dfu-util
-  
+
 TARGET   ?= openground
 TARGET_SOURCE_DIR   = $(ROOT)/src/$(TARGET)
 TARGET_SOURCE_FILES_FOUND += $(wildcard $(TARGET_SOURCE_DIR)/*.c)
@@ -107,7 +107,7 @@ LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 .SECONDEXPANSION:
 .SECONDARY:
 
-all: stylecheck elf 
+all: stylecheck elf
 
 elf: $(BIN_DIR)/$(TARGET).elf
 bin: $(BIN_DIR)/$(TARGET).bin
@@ -150,15 +150,17 @@ $(BIN_DIR)/%.lst: $(BIN_DIR)/%.elf
 	@printf "  OBJDUMP $(*).lst\n"
 	$(Q)$(OBJDUMP) -S $(BIN_DIR)/$(*).elf > $(BIN_DIR)/$(*).lst
 
-$(BIN_DIR)/%.elf $(BIN_DIR)/%.map: $(OBJS) $(LDSCRIPT) bin_dir
+$(BIN_DIR)/%.elf $(BIN_DIR)/%.map: $(OBJS) $(LDSCRIPT)
 	@printf "  LD      $(*).elf\n"
+	@mkdir -p ${BIN_DIR}
 	$(Q)$(LD) $(TGT_LDFLAGS) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(BIN_DIR)/$(*).elf
 
-$(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.c libopencm3 obj_dir src/hoptable.h 
+$(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.c libopencm3/lib/libopencm3_stm32f0.a src/hoptable.h
 	@printf "  CC      $(*).c\n"
+	@mkdir -p $(dir $(OBJECT_DIR)/$(*).o)
 	$(Q)$(CC) $(TGT_CFLAGS) $(CFLAGS) -o $(OBJECT_DIR)/$(*).o -c $(SOURCE_DIR)/$(*).c
 
-src/hoptable.h: 
+src/hoptable.h:
 	python ./scripts/generate_hoptable.py > src/hoptable.h
 
 clean:
@@ -171,15 +173,6 @@ stylecheck: $(HEADER_FILES) $(SOURCE_FILES_FOUND)
 %.stlink-flash: %.bin
 	@printf "  FLASH  $<\n"
 	$(STFLASH) write $(*).bin 0x8000000
-
-
-bin_dir:
-	@mkdir -p ${BIN_DIR}
-
-obj_dir:
-	@mkdir -p ${OBJECT_DIR}
-	@mkdir -p ${OBJECT_DIR}/eeprom_emulation
-	@mkdir -p ${OBJECT_DIR}/$(TARGET)
 
 ifeq ($(STLINK_PORT),)
 ifeq ($(BMP_PORT),)
@@ -215,22 +208,19 @@ else
 		   -x $(SCRIPT_DIR)/stlink_flash.scr \
 		   $(*).elf
 endif
-sterase : 
+sterase :
 	st-flash erase
 
 stflasherase : sterase stflash
 
 stflash : $(BIN_DIR)/$(TARGET).bin
-	st-flash --reset write $(BIN_DIR)/$(TARGET).bin 0x8000000 
+	st-flash --reset write $(BIN_DIR)/$(TARGET).bin 0x8000000
 
 
 dfu : $(BIN_DIR)/$(TARGET).bin
 	$(DFU_UTIL) -a 0 -D $(BIN_DIR)/$(TARGET).bin -s 0x08000000:leave -R
 
-
-libopencm3 : libopencm3/lib/libopencm3_stm32f0.a submodules
-
-libopencm3/lib/libopencm3_stm32f0.a: 
+libopencm3/lib/libopencm3_stm32f0.a: submodules
 	$(MAKE) -C libopencm3
 
 #git submodules handling
@@ -240,9 +230,9 @@ submodules:
 gdb-openocd: $(BIN_DIR)/$(TARGET).elf
 	$(GDB) $(BIN_DIR)/$(TARGET).elf -ex "target remote localhost:3333"
 
-reset:
+reset-openocd:
 	echo "reset" | nc -4 localhost 4444
 
-.PHONY: images clean stylecheck styleclean elf bin hex srec list submodules bin_dir obj_dir stylecheck
+.PHONY: images clean stylecheck styleclean elf bin hex srec list stylecheck
 
 -include $(OBJS:.o=.d)
