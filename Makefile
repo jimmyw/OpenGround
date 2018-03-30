@@ -240,6 +240,9 @@ submodules:
 gdb-openocd: $(BIN_DIR)/$(TARGET).elf
 	$(GDB) $(BIN_DIR)/$(TARGET).elf -ex "target remote localhost:3333"
 
+reset:
+	echo "reset" | nc -4 localhost 4444
+
 .PHONY: images clean stylecheck styleclean elf bin hex srec list submodules bin_dir obj_dir stylecheck
 
 -include $(OBJS:.o=.d)
