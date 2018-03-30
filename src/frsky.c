@@ -180,7 +180,6 @@ static void frsky_send_packet(void) {
     cc2500_enter_txmode();
 
     // fetch adc channel data
-    adc_process();
     uint16_t adc_data[8];
     uint32_t i;
     for (i = 0; i < 8; i++) {
@@ -307,6 +306,9 @@ void TIM3_IRQHandler(void) {
     if (timer_get_flag(TIM3, TIM_SR_UIF)) {
         // clear flag (NOTE: this should never be done at the end of the ISR)
         timer_clear_flag(TIM3, TIM_SR_UIF);
+   
+        // Fetch last adc value
+        adc_process();
 
         // when will there be the next isr?
         switch (frsky_state) {

@@ -82,27 +82,38 @@ void lcd_init(void) {
   u8g2_InitDisplay(&u8g2); // send init sequence to the display, display is in sleep mode after this,
   u8g2_SetPowerSave(&u8g2, 0); // wake up display
   u8g2_ClearBuffer(&u8g2);
+  u8g2_FirstPage(&u8g2);
+  do {
+      u8g2_SetFont(&u8g2, u8g2_font_amstrad_cpc_extended_8f);
+      u8g2_DrawStr(&u8g2, 0,10, "Hello world");
+  } while ( u8g2_NextPage(&u8g2) );
   ready = 1;
 }
 
-void lcd_send_data(const uint8_t *adjusted) {
+int screen = 0;
+void lcd_send_data(const uint8_t *x) {
   if (!ready)
       return;
   char buf[32];
   // Render screen
   u8g2_FirstPage(&u8g2);
-  u8g2_SetFont(&u8g2, u8g2_font_amstrad_cpc_extended_8f);
   do {
     //u8g2_DrawLine(&u8g2, 64-j, 64-j, j, j);
-
-    //u8g2_DrawCircle(&u8g2, 32 + (adjusted[2] * 32 / 0x600), 32 + (adjusted[3] * 32 / 0x600), 2, U8G2_DRAW_ALL);
-    //u8g2_DrawCircle(&u8g2, 96 + (adjusted[0] * 32 / 0x600), 32 + (adjusted[1] * 32 / 0x600), 2, U8G2_DRAW_ALL);
-
-    for (int i = 0; i < 4; i++) {
-      int2bufhex(adc_get_channel(i), buf);
-      u8g2_DrawStr(&u8g2, 0, (i * 10) + 10, buf);
-      //u8g2_DrawLine(&u8g2, 0, (i * 2) + 57, (0x600 + adjusted[i]) * 128 / 0xc00, (i * 2) + 57); // 128 px wide screen
-    }
+    switch (screen) {
+        case 0:
+            u8g2_DrawCircle(&u8g2, 32 + (-adc_get_channel_rescaled(1) * 32 / 0xe00), 32 + (-adc_get_channel_rescaled(0) * 32 / 0xe00), 2, U8G2_DRAW_ALL);
+            u8g2_DrawCircle(&u8g2, 96 + (-adc_get_channel_rescaled(3) * 32 / 0xe00), 32 + (-adc_get_channel_rescaled(2) * 32 / 0xe00), 2, U8G2_DRAW_ALL);
+            break;
+        case 1:
+            for (int i = 0; i < 4; i++) {
+              int2bufhex(adc_get_channel(i), buf);
+              u8g2_DrawStr(&u8g2, 0, (i * 10) + 10, buf);
+              int2bufhex(adc_get_channel_rescaled(i), buf);
+              u8g2_DrawStr(&u8g2, 50, (i * 10) + 10, buf);
+              u8g2_DrawLine(&u8g2, 0, (i * 2) + 57, 64 + ((adc_get_channel_rescaled(i) * 64) / 0xe00), (i * 2) + 57); // 128 px wide screen
+            }
+            break;
+     }
   } while ( u8g2_NextPage(&u8g2) );
 
 }

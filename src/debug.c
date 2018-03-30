@@ -55,6 +55,7 @@ void debug_putc(uint8_t ch) {
 }
 
 void debug_flush(void) {
+#ifdef STM32F0
     if (!debug_init_done) {
         return;
     }
@@ -68,6 +69,7 @@ void debug_flush(void) {
             lcd_show_logo();
         }
     }
+#endif
 }
 
 
