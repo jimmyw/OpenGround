@@ -8,6 +8,7 @@
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/i2c.h>
+#include "timeout.h"
 #include "lcd.h"
 #include "u8g2.h"
 #include "adc.h"
@@ -16,6 +17,99 @@
 
 static u8g2_t u8g2;
 static volatile int ready = 0;
+static void i2c_debug(uint32_t sr1, uint32_t sr2, const char *where) {
+    static uint32_t old_sr1 = 0;
+    static uint32_t old_sr2 = 0;
+    static const char *old_where = 0;
+    if (old_sr1 == sr1 && old_sr2 == sr2 && old_where == where)
+        return;
+    old_sr1 = sr1;
+    old_sr2 = sr2;
+    old_where = where;
+    debug("i2c ");
+    debug((char *)where);
+    debug(":");
+    if (sr1 & I2C_SR1_SMBALERT)
+        debug(" SR1SMBALERT");
+    if (sr1 & I2C_SR1_TIMEOUT)
+        debug(" SR1TIMEOUT");
+    if (sr1 & I2C_SR1_PECERR)
+        debug(" SR1PECERR");
+    if (sr1 & I2C_SR1_OVR)
+        debug(" SR1OVR");
+    if (sr1 & I2C_SR1_AF)
+        debug(" SR1AF");
+    if (sr1 & I2C_SR1_ARLO)
+        debug(" SR1ARLO");
+    if (sr1 & I2C_SR1_BERR)
+        debug(" SR1BERR");
+    if (sr1 & I2C_SR1_TxE)
+        debug(" SR1TxE");
+    if (sr1 & I2C_SR1_RxNE)
+        debug(" SR1RxNE");
+    if (sr1 & I2C_SR1_STOPF)
+        debug(" SR1STOPF");
+    if (sr1 & I2C_SR1_ADD10)
+        debug(" SR1AD10");
+    if (sr1 & I2C_SR1_BTF)
+        debug(" SR1BTF");
+    if (sr1 & I2C_SR1_ADDR)
+        debug(" SR1ADDR");
+    if (sr1 & I2C_SR1_SB)
+        debug(" SR1SB");
+
+    if (sr2 & I2C_SR2_TRA)
+        debug(" SR2TRA");
+    if (sr2 & I2C_SR2_BUSY)
+        debug(" SR2BUSY");
+    if (sr2 & I2C_SR2_MSL)
+        debug(" SR2MSL");
+        
+    uint32_t cr1 = I2C_CR1(I2C2);
+    if (cr1 & I2C_CR1_SWRST)
+        debug(" CR1_SWRST");
+    if (cr1 & I2C_CR1_ALERT)
+        debug(" CR1_ALERT");
+    if (cr1 & I2C_CR1_PEC)
+        debug(" CR1_PEC");
+    if (cr1 & I2C_CR1_POS)
+        debug(" CR1_POS");
+    if (cr1 & I2C_CR1_ACK)
+        debug(" CR1_ACK");
+    if (cr1 & I2C_CR1_STOP)
+        debug(" CR1_STOP");
+    if (cr1 & I2C_CR1_START)
+        debug(" CR1_START");
+    if (cr1 & I2C_CR1_PE)
+        debug(" CR1_PEL");
+    debug("\n");
+}
+
+static int i2c_wait(uint32_t sr1_p, uint32_t sr1_n, uint32_t sr2_p, uint32_t sr2_n, const char *where) {
+    static int timed_out = 0;
+    timeout_set(20);
+    while (1) {
+        uint32_t sr1 = I2C_SR1(I2C2);
+        uint32_t sr2 = I2C_SR2(I2C2);
+        if (timed_out)
+            i2c_debug(sr1, sr2, where);
+        if (timeout_timed_out()) {
+            i2c_debug(sr1, sr2, where);
+            debug("TIMEOUT\n");
+            timed_out = 1;
+            I2C_SR1(I2C2) = ~ (0x1000DFDF & 0xFFFFFF);
+            i2c_debug(sr1, sr2, where);
+            i2c_send_stop(I2C1);
+            i2c_debug(sr1, sr2, where);
+            //i2c_reset(I2C2);
+            //I2C_CR1(I2C2) |= I2C_CR1_SWRST;
+            while(1){}
+            return 0;
+        }
+        if (((sr1 & sr1_p) == sr1_p) && ((sr2 & sr2_p) == sr2_p) && ((~sr1 & sr1_n) == sr1_n) && ((~sr2 & sr2_n) == sr2_n))
+            return 1;
+    }
+}
 
 static uint8_t u8x8_byte_stm32_hw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
@@ -27,25 +121,16 @@ static uint8_t u8x8_byte_stm32_hw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int
   {
     case U8X8_MSG_BYTE_SEND:
       data = (uint8_t *)arg_ptr;
-      debug("hw_i2c send: ");
-      debug_put_int8(arg_int);
-      debug(" bytes\n");
+      //debug("hw_i2c send: ");
+      //debug_put_int8(arg_int);
+      //debug(" bytes\n");
 
       while( arg_int > 0 )
       {
         i2c_send_data(I2C2, *data);
-        while (!(I2C_SR1(I2C2) & I2C_SR1_BTF)) {
-            if (I2C_SR1(I2C2) & I2C_SR1_BTF)
-                debug("BTF\n");
-            if (I2C_SR1(I2C2) & I2C_SR1_TxE)
-                debug("TxE\n");
-            if (I2C_SR1(I2C2) & I2C_SR1_ADDR)
-                debug("ADDR\n");
-            if (I2C_SR1(I2C2) & I2C_SR1_SB)
-                debug("SB\n");
-
+        if (!i2c_wait(I2C_SR1_BTF, 0,0,0, "hw_i2c_send")) {
+            return 0;
         }
-        //while (!(I2C_SR1(I2C2) & (I2C_SR1_BTF | I2C_SR1_TxE)));
         data++;
         arg_int--;
       }
@@ -59,13 +144,13 @@ static uint8_t u8x8_byte_stm32_hw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int
 		      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
 		      GPIO_I2C2_SCL | GPIO_I2C2_SDA);
       i2c_peripheral_disable(I2C2);
-      i2c_set_clock_frequency(I2C2, I2C_CR2_FREQ_42MHZ);
+      i2c_set_clock_frequency(I2C2, rcc_apb1_frequency / 1000000); // Right now: I2C_CR2_FREQ_36MHZ
       //i2c_set_fast_mode(I2C2);
       i2c_set_standard_mode(I2C2);
-      //i2c_set_ccr(I2C2, 0x1e);
-      //i2c_set_trise(I2C2, 0x0b);
-      i2c_set_ccr(I2C2, 35);
-      i2c_set_trise(I2C2,43);
+      i2c_set_ccr(I2C2, 36 * 2.5 / 2); // Clock running 36 mhz gives us 1us for half a cycle, Spec for SSD1306 is 2.5us for a full cycle
+      i2c_set_trise(I2C2, 0x0b);
+      //i2c_set_ccr(I2C2, 35);
+      //i2c_set_trise(I2C2,43);
       i2c_set_own_7bit_slave_address(I2C2, 0x00);
       i2c_peripheral_enable(I2C2);
       break;
@@ -75,20 +160,27 @@ static uint8_t u8x8_byte_stm32_hw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int
       
     case U8X8_MSG_BYTE_START_TRANSFER: {
       uint8_t addr = u8x8_GetI2CAddress(u8x8);
-      debug("hw_i2c start addr: ");
-      debug_put_hex8(addr);
-      debug("\n");
+      //debug("hw_i2c start addr: ");
+      //debug_put_hex8(addr);
+      //debug("\n");
       i2c_send_start(I2C2);
-      while (!((I2C_SR1(I2C2) & I2C_SR1_SB)
-		& (I2C_SR2(I2C2) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
+
+      // Wait until we have startbit, master mode and busy
+      if (!i2c_wait(I2C_SR1_SB, 0, I2C_SR2_MSL | I2C_SR2_BUSY,0,"send_start"))
+          return 0;
+
+      //debug("i2c started\n");
       
-      i2c_send_7bit_address(I2C2, addr, I2C_WRITE);
-      while (!(I2C_SR1(I2C2) & I2C_SR1_ADDR));
+      i2c_send_7bit_address(I2C2, addr >> 1, I2C_WRITE);
+      if (!i2c_wait(I2C_SR1_ADDR, 0,0,0,"send_addr")) {
+          return 0;
+      }
       reg32 = I2C_SR2(I2C2);
+      //debug("i2c addr sent\n");
       break;
     }
     case U8X8_MSG_BYTE_END_TRANSFER:
-      debug("hw_i2c end\n");
+      //debug("hw_i2c end\n");
       i2c_send_stop(I2C2);
       break;
     default:

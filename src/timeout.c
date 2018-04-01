@@ -52,12 +52,12 @@ void timeout_init(void) {
 }
 
 void timeout_set_100us(__IO uint32_t hus) {
-    debug("timeout_set_100us\n"); debug_flush();
+    //debug("timeout_set_100us\n"); debug_flush();
     timeout_100us = hus;
 }
 
 void timeout2_set_100us(__IO uint32_t hus) {
-    debug("timeout2_set_100us\n"); debug_flush();
+    //debug("timeout2_set_100us\n"); debug_flush();
     timeout2_100us = hus;
 }
 
