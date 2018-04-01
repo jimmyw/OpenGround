@@ -201,7 +201,7 @@ static uint8_t u8x8_byte_stm32_hw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int
       //debug("\n");
       
       // Check for error, and do a restart if an issue...
-      if (I2C_SR1(I2C2) & (I2C_SR1_ARLO | I2C_SR1_BERR)) {
+      if (I2C_SR1(I2C2) & (I2C_SR1_ARLO | I2C_SR1_BERR | I2C_SR1_AF)) {
           i2c_debug(I2C_SR1(I2C2), I2C_SR2(I2C2), "Found BERR");
           I2C_SR1(I2C2) &= ~I2C_SR1_BERR;
           i2c_init();
