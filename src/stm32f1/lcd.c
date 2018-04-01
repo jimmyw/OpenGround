@@ -88,41 +88,33 @@ static void i2c_debug(uint32_t sr1, uint32_t sr2, const char *where) {
 
 static void touch_init_i2c_free_bus(void) {
     debug("touch: freeing i2c bus\n");
-    debug_flush();
 
     // gpio init:
     // reset i2c bus by setting clk as output and sending manual clock pulses
     gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_I2C2_SCL);
 	gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_I2C2_SDA);
+    if (gpio_get(GPIOB, GPIO_I2C2_SDA) == 1)
+        debug("SDA IS HIGH\n");
+    else
+        debug("SDA IS LOW\n");
+    
+    // Set SDA High
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_I2C2_SDA);
 
-    // send 100khz clock train for some 100ms
-    timeout_set(100);
-    while (!timeout_timed_out()) {
-        if (gpio_get(GPIOB, GPIO_I2C2_SDA) == 1) {
-            debug("touch: i2c free again\n");
-            break;
-        }
+    // Send 10 pulses
+    for(int i =0; i < 10; i++) {
         gpio_set(GPIOB, GPIO_I2C2_SCL);
         delay_us(10);
         gpio_clear(GPIOB, GPIO_I2C2_SCL);
         delay_us(10);
     }
 
-    // send stop condition:
-    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_I2C2_SDA);
-
-    // clock is low
-    gpio_clear(GPIOB, GPIO_I2C2_SCL);
-    delay_us(10);
-    // sda = lo
     gpio_clear(GPIOB, GPIO_I2C2_SDA);
     delay_us(10);
-    // clock goes high
     gpio_set(GPIOB, GPIO_I2C2_SCL);
     delay_us(10);
-    // sda = hi
-    gpio_clear(GPIOB, GPIO_I2C2_SDA);
-    delay_us(10);
+    gpio_set(GPIOB, GPIO_I2C2_SDA);
+
 }
 
 
@@ -133,6 +125,10 @@ static void i2c_init(void) {
       rcc_periph_clock_enable(RCC_AFIO);
       i2c_peripheral_disable(I2C2);
       i2c_reset(I2C2);
+      // Reset flags 
+      I2C_SR1(I2C2) = 0;
+      I2C_SR2(I2C2) = 0;
+      I2C_CR1(I2C2) = 0;
 
       // Clock out until slave device releses the bus.
       touch_init_i2c_free_bus();
@@ -140,22 +136,14 @@ static void i2c_init(void) {
       gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
 		      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
 		      GPIO_I2C2_SCL | GPIO_I2C2_SDA);
-          
-      /*i2c_debug(I2C_SR1(I2C2), I2C_SR2(I2C2), "init_before reset");
-      I2C_CR1(I2C2) |= I2C_CR1_SWRST;
-      i2c_debug(I2C_SR1(I2C2), I2C_SR2(I2C2), "init_during reset");
-      for(int i = 0; i < 1000; i++) __asm__("nop");
-      I2C_CR1(I2C2) &= ~I2C_CR1_SWRST;
-      i2c_debug(I2C_SR1(I2C2), I2C_SR2(I2C2), "init_after reset");
-      I2C_CR1(I2C2) = 0;
-      I2C_CR2(I2C2) = 0;*/
 
       i2c_set_clock_frequency(I2C2, rcc_apb1_frequency / 1000000); // Right now: I2C_CR2_FREQ_36MHZ
       //i2c_set_fast_mode(I2C2); faster mode is shorter positive pulses
       i2c_set_standard_mode(I2C2);
-      i2c_set_ccr(I2C2, 36 * 2.5 / 2 * 4); // Clock running 36 mhz gives us 1us for half a cycle, Spec for SSD1306 is 2.5us for a full cycle
+      i2c_set_ccr(I2C2, 36 * 2.5 / 2 * 2); // Clock running 36 mhz gives us 1us for half a cycle, Spec for SSD1306 is 2.5us for a full cycle
       i2c_set_trise(I2C2,43);
       i2c_set_own_7bit_slave_address(I2C2, 0x00);
+	     
       i2c_peripheral_enable(I2C2);
       i2c_debug(I2C_SR1(I2C2), I2C_SR2(I2C2), "init_done");
 }
@@ -218,6 +206,10 @@ static uint8_t u8x8_byte_stm32_hw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int
           I2C_SR1(I2C2) &= ~I2C_SR1_BERR;
           i2c_init();
       }
+
+	  //if (I2C_CR1(I2C2) & I2C_CR1_STOP) {
+      //    debug("STOP FLAG SET ON START\n");
+      //}
 
       //
       i2c_send_start(I2C2);
