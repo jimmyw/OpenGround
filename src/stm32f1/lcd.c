@@ -138,7 +138,7 @@ static void i2c_init(void) {
 		      GPIO_I2C2_SCL | GPIO_I2C2_SDA);
 
       i2c_set_clock_frequency(I2C2, rcc_apb1_frequency / 1000000); // Right now: I2C_CR2_FREQ_36MHZ
-      //i2c_set_fast_mode(I2C2); faster mode is shorter positive pulses
+      //i2c_set_fast_mode(I2C2); //faster mode is shorter positive pulses
       i2c_set_standard_mode(I2C2);
       i2c_set_ccr(I2C2, 36 * 2.5 / 2 * 2); // Clock running 36 mhz gives us 1us for half a cycle, Spec for SSD1306 is 2.5us for a full cycle
       i2c_set_trise(I2C2,43);
@@ -156,6 +156,7 @@ static int i2c_wait(uint32_t sr1_p, uint32_t sr1_n, uint32_t sr2_p, uint32_t sr2
         if (timeout_timed_out()) {
             i2c_debug(sr1, sr2, where);
             debug("TIMEOUT\n");
+            I2C_CR1(I2C2) |= I2C_CR1_SWRST;
             return 0;
         }
         if (((sr1 & sr1_p) == sr1_p) && ((sr2 & sr2_p) == sr2_p) && ((~sr1 & sr1_n) == sr1_n) && ((~sr2 & sr2_n) == sr2_n))
@@ -201,6 +202,11 @@ static uint8_t u8x8_byte_stm32_hw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int
       //debug("\n");
       
       // Check for error, and do a restart if an issue...
+      if (I2C_CR1(I2C2) & I2C_CR1_SWRST) {
+          i2c_debug(I2C_SR1(I2C2), I2C_SR2(I2C2), "Found SWRST");
+          I2C_SR1(I2C2) &= ~I2C_SR1_BERR;
+          i2c_init();
+      }
       if (I2C_SR1(I2C2) & (I2C_SR1_ARLO | I2C_SR1_BERR | I2C_SR1_AF)) {
           i2c_debug(I2C_SR1(I2C2), I2C_SR2(I2C2), "Found BERR");
           I2C_SR1(I2C2) &= ~I2C_SR1_BERR;
