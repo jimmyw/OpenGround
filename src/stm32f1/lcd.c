@@ -148,9 +148,7 @@ static uint8_t u8x8_byte_stm32_hw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int
       //i2c_set_fast_mode(I2C2);
       i2c_set_standard_mode(I2C2);
       i2c_set_ccr(I2C2, 36 * 2.5 / 2); // Clock running 36 mhz gives us 1us for half a cycle, Spec for SSD1306 is 2.5us for a full cycle
-      i2c_set_trise(I2C2, 0x0b);
-      //i2c_set_ccr(I2C2, 35);
-      //i2c_set_trise(I2C2,43);
+      i2c_set_trise(I2C2,43);
       i2c_set_own_7bit_slave_address(I2C2, 0x00);
       i2c_peripheral_enable(I2C2);
       break;
